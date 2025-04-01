@@ -16,12 +16,26 @@ const db = knex({
     user: env.DB_USER,
     password: env.DB_PASSWORD,
     ssl: env.DB_SSL,
-    pool: {
-      min: env.DB_POOL_MIN,
-      max: env.DB_POOL_MAX
-    }
+  },
+  pool: {
+    min: env.DB_POOL_MIN || 2,
+    max: env.DB_POOL_MAX || 10,
+    idleTimeoutMillis: 30000,
+    createTimeoutMillis: 30000,
+    acquireTimeoutMillis: 30000,
+    propagateCreateError: false
   },
   useNullAsDefault: true,
+  acquireConnectionTimeout: 60000,
+  asyncStackTraces: true
+});
+
+// Add connection health check
+db.on('query-error', (error, obj) => {
+  console.error('Database query error:', error);
+  if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
+    // Implement reconnection logic if needed
+  }
 });
 
 db.isPostgres = isPostgres;

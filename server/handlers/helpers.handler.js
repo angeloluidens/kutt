@@ -8,6 +8,16 @@ const redis = require("../redis");
 const env = require("../env");
 
 function error(error, req, res, _next) {
+  // Handle connection errors specifically
+  if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
+    console.error('Connection error:', error);
+    const message = 'Connection error. Please try again.';
+    if (req.isHTML) {
+      return res.status(503).render('error', { message });
+    }
+    return res.status(503).json({ error: message });
+  }
+
   if (!(error instanceof CustomError)) {
     console.error(error);
   } else if (env.isDev) {
@@ -29,7 +39,6 @@ function error(error, req, res, _next) {
     });
     return;
   }
-
 
   return res.status(statusCode).json({ error: message });
 };
